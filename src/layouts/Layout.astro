@@ -6,6 +6,8 @@ import { siteConfig } from "site-config";
 import "../styles/global.css";
 import SEOmeta from "@components/SEOmeta.astro";
 
+import { ClientRouter } from "astro:transitions";
+
 export interface Props {
   title?: string;
   description?: string;
@@ -26,7 +28,8 @@ const { title = siteConfig.title, description, image } = Astro.props;
     <meta name="generator" content={Astro.generator} />
 
     <SEOmeta title={title} description={description} image={image} />
-  
+    
+    <ClientRouter />
   </head>
 </html>
 <body>

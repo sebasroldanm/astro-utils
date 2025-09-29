@@ -1,14 +1,14 @@
 // Define the configuration for the site
 export const siteConfig = {
-  title: "My Astro Site",
-  description: "This is a fantastic Astro site",
+  title: "Astro Site Utils",
+  description: "Astro + Tailwind CSS 4 + Daisy UI 5 project stater",
   githubRepo: "aholbreich/astrostart_TD"
 };
 
 // Feature flags examles
 export const featureFlags = {
   enableBetaFeatures: false,
-  enableImprint: true,
+  enableImprint: false,
   enableDataprotection: false,
 };
 
@@ -19,12 +19,12 @@ export const nav = [
     url: "/",
   },
   {
-    text: "Daisyui",
-    url: "/saisyui/",
+    text: "Generate Hash",
+    url: "/generate-hash",
   },
   {
     text: "404",
-    url: "/404/",
+    url: "/404",
   },
   
 ];

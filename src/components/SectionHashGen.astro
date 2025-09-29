@@ -1,0 +1,153 @@
+---
+// Si usas Tailwind/DaisyUI, importa tu css global aquí
+// import '../styles/global.css';
+---
+<div class="container mx-auto">
+    <div class="w-full max-w-xl">
+      <div class="card bg-base-100 shadow-xl">
+        <div class="card-body">
+          <h2 class="card-title" transition:name="title-gen-hash-hmac">Generador de token HMAC</h2>
+
+          <form id="form" class="grid gap-3">
+            <label class="label">
+              <span class="label-text">Host (incluye https://)</span>
+            </label>
+            <input id="host" class="input input-bordered w-full" placeholder="https://claroclub.test" value="https://claroclub.test" required />
+
+            <label class="label">
+              <span class="label-text">Secret Key</span>
+            </label>
+            <input id="secret_key" class="input input-bordered w-full" placeholder="Secret Key" value="f0%lS9k^t;B6" required />
+
+            <label class="label">
+              <span class="label-text">MIN</span>
+            </label>
+            <input id="min" class="input input-bordered w-full" placeholder="3112003034" value="3112003034" required />
+
+            <div class="flex gap-2">
+              <button id="btnGen" class="btn btn-primary" type="submit">Generar</button>
+              <button id="btnCopy" class="btn" type="button" disabled>Copiar URL</button>
+            </div>
+          </form>
+
+          <div id="output" class="mt-4 p-3 rounded bg-base-200">
+            <pre id="result" style="white-space:pre-wrap; word-break:break-all;">Aquí aparecerá el resultado.</pre>
+          </div>
+
+          <details class="mt-2">
+            <summary>Depuración / Console</summary>
+            <pre id="debug" style="white-space:pre-wrap; max-height:200px; overflow:auto;"></pre>
+          </details>
+        </div>
+      </div>
+    </div>
+
+    <script type="module">
+      // Utilidades
+      const logDebug = (msg) => {
+        const d = document.getElementById('debug');
+        d.textContent += msg + '\\n';
+      };
+
+      async function generateToken(host, secret_key, min) {
+        if (!window.crypto || !window.crypto.subtle) {
+          throw new Error('WebCrypto no está disponible. Abre la página desde https:// o http://localhost');
+        }
+
+        const ts = Math.floor(Date.now() / 1000);
+        const encoder = new TextEncoder();
+
+        // Importar la clave HMAC (nota: hash debe ser objeto)
+        const key = await window.crypto.subtle.importKey(
+          "raw",
+          encoder.encode(secret_key),
+          { name: "HMAC", hash: { name: "SHA-256" } },
+          false,
+          ["sign"]
+        );
+
+        // Concatenar min + ts (ambos como string)
+        const payload = min.toString() + ts.toString();
+        const data = encoder.encode(payload);
+
+        // Firmar con HMAC
+        const signature = await window.crypto.subtle.sign(
+          { name: "HMAC" },
+          key,
+          data
+        );
+
+        // Convertir a hex
+        const token = Array.from(new Uint8Array(signature))
+          .map(b => b.toString(16).padStart(2, "0"))
+          .join("");
+
+        // Asegurarse de que el host tenga protocolo
+        let normalizedHost = host.trim();
+        if (!/^https?:\/\//i.test(normalizedHost)) {
+          normalizedHost = 'https://' + normalizedHost;
+        }
+
+        // Construir URL (añade '?' o '&' según corresponda)
+        const sep = normalizedHost.includes('?') ? '&' : '?';
+        const url = `${normalizedHost}${sep}min_claromusic=${encodeURIComponent(min)}&ts=${ts}&token=${token}`;
+
+        return { ts, min, token, url, payload };
+      }
+
+      // Form handling
+      const form = document.getElementById('form');
+      const resultEl = document.getElementById('result');
+      const copyBtn = document.getElementById('btnCopy');
+
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        resultEl.textContent = 'Generando...';
+        document.getElementById('debug').textContent = '';
+
+        const host = document.getElementById('host').value;
+        const secret_key = document.getElementById('secret_key').value;
+        const min = document.getElementById('min').value;
+
+        try {
+          logDebug(`host="${host}" secret_key="${secret_key}" min="${min}"`);
+          const res = await generateToken(host, secret_key, min);
+          resultEl.innerHTML = [
+            `<b>TS:</b> ${res.ts}`,
+            `<b>MIN:</b> ${res.min}`,
+            `<b>Token:</b> ${res.token}`,
+            `<b>Payload (min+ts):</b> ${res.payload}`,
+            `<b>URL:</b> <a href="${res.url}" target="_blank" rel="noreferrer">${res.url}</a>`
+          ].join('<br><br>');
+
+          copyBtn.disabled = false;
+          copyBtn.dataset.url = res.url;
+
+          logDebug(`Token generado correctamente.`);
+          logDebug(`token (hex): ${res.token}`);
+        } catch (err) {
+          console.error(err);
+          resultEl.textContent = 'Error: ' + (err.message || err);
+          logDebug('ERROR: ' + (err.stack || err.message || err));
+          copyBtn.disabled = true;
+        }
+      });
+
+      copyBtn.addEventListener('click', async () => {
+        const url = copyBtn.dataset.url;
+        if (!url) return;
+        try {
+          await navigator.clipboard.writeText(url);
+          copyBtn.textContent = 'Copiado ✓';
+          setTimeout(()=> copyBtn.textContent = 'Copiar URL', 1500);
+        } catch (err) {
+          alert('No se pudo copiar: ' + err);
+        }
+      });
+
+      // Opcional: llenar demo automático en carga (comenta si no quieres)
+      window.addEventListener('DOMContentLoaded', () => {
+        // La página ya trae valores por defecto en inputs
+      });
+    </script>
+</div>
