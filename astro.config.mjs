@@ -18,4 +18,6 @@ export default defineConfig({
   vite: {
     plugins: [tailwindcss()],
   },
+  site: 'https://sebasroldanm.github.io',
+  base: '/astro-utils/'
 });
