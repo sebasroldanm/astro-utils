@@ -1,23 +1,8 @@
-import { defineConfig } from "astro/config";
-import mdx from "@astrojs/mdx";
-import sitemap from "@astrojs/sitemap";
-import icon from "astro-icon";
-import tailwindcss from "@tailwindcss/vite";
-import netlify from "@astrojs/netlify";
-
-
-import alpinejs from "@astrojs/alpinejs";
-
+// @ts-check
+import { defineConfig } from 'astro/config';
+import { webcore } from 'webcoreui/integration'
 
 // https://astro.build/config
 export default defineConfig({
-  site: "https://example.com",
-  trailingSlash: "never",
-  integrations: [mdx(), sitemap(), icon(), alpinejs()],
-  adapter: netlify(),
-  vite: {
-    plugins: [tailwindcss()],
-  },
-  site: 'https://sebasroldanm.github.io',
-  base: '/astro-utils/'
+    integrations: [webcore()]
 });

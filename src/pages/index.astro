@@ -1,15 +1,143 @@
 ---
-import Code from "@components/Code.astro";
-import SimpleCTA from "@components/SimpleCTA.astro";
-import SectionVideo from "@components/SectionVideo.astro";
-import Layout from "@layouts/Layout.astro";
+import Layout from "../blocks/Layout/Layout.astro";
+import type { LayoutProps } from "../blocks/Layout/layout";
+import type { MenuProps } from "webcoreui/astro";
+import Form from "../blocks/Form/Form.astro";
+import type { FormProps } from "../blocks/Form/form";
+import { Card, Grid, Button } from "webcoreui/astro";
+
+const menu: MenuProps = {
+  items: [
+    { name: "Inicio", href: "/", active: true },
+    // { name: "Hash", href: "/hash" },
+  ],
+};
+
+const layout: LayoutProps = {
+  lang: "es",
+  menu: menu,
+  seo: { title: "Home page", description: "Home Page Astro Utils" },
+};
+
+const fields: FormProps["fields"] = [
+  { type: "text", label: "Host", name: "host", placeholder: "https://claroclub.test", required: true },
+  { type: "text", label: "Secret key", name: "secret", placeholder: "********", required: true },
+  { type: "number", label: "Teléfono", name: "phone", placeholder: "3002001020", required: true },
+  { type: "button", label: "Generar" },
+];
 ---
 
-<Layout>
+<Layout {...layout}>
+  <slot name="atf">
+    <section class="hero">
+      <h1>Generador HASH HMAC</h1>
+    </section>
+  </slot>
 
-  <Code />
-  <!-- <SimpleCTA />
-  <SectionVideo /> -->
+  <section class="container">
+    <Grid column={2}>
+      <!-- Formulario -->
+      <Card secondary={true}>
+          <Form id="hash-form" fields={fields} />
+      </Card>
 
+      <!-- Resultados -->
+      <Card secondary={true}>
+          <h2 class="mb-3">Resultado</h2>
+          <div id="result" class="space-y-2 text-sm font-mono">
+            <em>Completa el formulario y presiona "Generar".</em>
+          </div>
+          <div class="mt-4">
+            <Button id="copy-btn" variant="primary" disabled>📋 Copiar URL</Button>
+          </div>
+      </Card>
+    </Grid>
+  </section>
 </Layout>
 
+<style lang="scss" is:global>
+  .hero {
+    text-align: center;
+    padding: 3rem 1rem;
+  }
+  .font-mono {
+    font-family: monospace;
+    white-space: pre-wrap;
+    word-break: break-all;
+  }
+  .space-y-2 > * + * {
+    margin-top: 0.5rem;
+  }
+</style>
+
+<script type="module">
+  async function main(host, secret_key, min) {
+    const ts = Math.floor(Date.now() / 1000);
+    const encoder = new TextEncoder();
+
+    const key = await crypto.subtle.importKey(
+      "raw",
+      encoder.encode(secret_key),
+      { name: "HMAC", hash: "SHA-256" },
+      false,
+      ["sign"]
+    );
+
+    const data = encoder.encode(min + ts);
+    const signature = await crypto.subtle.sign("HMAC", key, data);
+    const hashArray = Array.from(new Uint8Array(signature));
+    const token = hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
+
+    return {
+      ts,
+      min,
+      token,
+      url: `${host}?min_claromusic=${min}&ts=${ts}&token=${token}`,
+    };
+  }
+
+  document.addEventListener("DOMContentLoaded", () => {
+    const formEl = document.querySelector("#hash-form form") || document.querySelector("#hash-form");
+    const resultEl = document.getElementById("result");
+    const copyBtn = document.getElementById("copy-btn");
+
+    let lastUrl = null;
+
+    formEl.addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const fd = new FormData(formEl);
+      const host = fd.get("host");
+      const secret = fd.get("secret");
+      const phone = fd.get("phone");
+
+      if (!host || !secret || !phone) {
+        resultEl.innerHTML = "<span style='color:red'>Completa todos los campos.</span>";
+        copyBtn.disabled = true;
+        return;
+      }
+
+      resultEl.innerHTML = "<em>Generando token…</em>";
+
+      const result = await main(host, secret, phone);
+      lastUrl = result.url;
+
+      resultEl.innerHTML = `
+        <div><strong>Timestamp:</strong> ${result.ts}</div>
+        <div><strong>Min:</strong> ${result.min}</div>
+        <div><strong>Token:</strong> <code>${result.token}</code></div>
+        <div><strong>URL:</strong> <a href="${result.url}" target="_blank">${result.url}</a></div>
+      `;
+
+      copyBtn.disabled = false;
+    });
+
+    copyBtn.addEventListener("click", () => {
+      if (lastUrl) {
+        navigator.clipboard.writeText(lastUrl);
+        copyBtn.innerText = "✅ Copiado!";
+        setTimeout(() => (copyBtn.innerText = "📋 Copiar URL"), 1500);
+      }
+    });
+  });
+</script>

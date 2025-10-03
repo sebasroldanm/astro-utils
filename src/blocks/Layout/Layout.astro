@@ -1,0 +1,71 @@
+---
+import { ConditionalWrapper, Footer, Menu } from "webcoreui/astro";
+
+import SEO from "../SEO/SEO.astro";
+import { Icon } from 'webcoreui/astro'
+
+import type { LayoutProps } from "./layout";
+import "./layout.scss";
+
+interface Props extends LayoutProps {}
+
+const {
+  seo,
+  lang = "en",
+  menu,
+  className,
+  containerClassName,
+  ...rest
+} = Astro.props;
+
+const hasLeftSidebar = Astro.slots.has("left-sidebar");
+const hasRightSidebar = Astro.slots.has("right-sidebar");
+const hasSidebar = hasLeftSidebar || hasRightSidebar;
+
+const containerClasses = [
+  containerClassName || "container",
+  hasSidebar && "flex column md-row",
+];
+
+const footer = [{
+    items: [
+        { name: 'Home', href: '/' },
+        // { name: 'Docs', href: '/docs' },
+        // { name: 'Component', href: '/docs/components' }
+    ]
+}]
+---
+
+<!doctype html>
+<html lang={lang}>
+  <head>
+    <SEO {...seo} />
+  </head>
+  <body {...rest}>
+    {
+      menu && (
+        <Menu {...menu}>
+          <slot name="menu" />
+        </Menu>
+      )
+    }
+    <slot name="atf" />
+    <main class:list={containerClasses}>
+      <slot name="left-sidebar" />
+      <ConditionalWrapper condition={hasSidebar}>
+        <div slot="wrapper" class:list={className}>children</div>
+        <slot />
+      </ConditionalWrapper>
+      <slot name="right-sidebar" />
+    </main>
+    <slot name="above-footer" />
+    <Footer
+        logo={{ url: 'logo.svg', alt: 'Logo' }}
+        columns={footer}
+        subText={`© ${new Date().getFullYear()}. All Rights Reserved.`}
+    >
+        <span>Built using <a href="https://webcoreui.dev/" target="_blank">Webcore</a> with ❤️</span>
+    </Footer>
+    <slot name="scripts" />
+  </body>
+</html>

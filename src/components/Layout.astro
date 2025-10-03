@@ -1,0 +1,50 @@
+---
+import logo from '../../public/logo.svg?raw'
+import { Menu, Icon } from 'webcoreui/astro'
+
+const menuLogo = {
+  logo: {
+    html: logo
+  }
+};
+
+const menu = [
+    { name: 'Home', href: '/', active: true },
+    { name: 'Docs', href: '/docs/menu' }
+]
+---
+
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="description" content="Webcore Astro Integration" />
+        <meta name="viewport" content="width=device-width" />
+        <link rel="icon" type="image/svg+xml" href="/logo.svg" />
+        <title>Webcore Astro Integration</title>
+    </head>
+    <body>
+        <Menu 
+            logo={menuLogo.logo}
+            items={menu}
+        >
+            <Icon type="github" size={16} />
+        </Menu>
+        <main class="container">
+            <slot />
+        </main>
+    </body>
+</html>
+
+<style lang="scss" is:global>
+    @use 'webcoreui/styles' as *;
+    @use 'webcoreui/config' as *;
+    @include setup((
+        fontRegular: '/fonts/Inter-Regular.woff2',
+        fontBold: '/fonts/Inter-Bold.woff2'
+    ));
+
+    main {
+        @include spacing(px-default);
+    }
+</style>
